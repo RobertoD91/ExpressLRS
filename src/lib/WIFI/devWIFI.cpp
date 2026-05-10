@@ -938,6 +938,11 @@ static bool initialize()
   return true;
 }
 
+#if defined(TARGET_RX) && defined(PLATFORM_ESP32)
+extern void serial1Shutdown();
+extern void serialShutdown();
+#endif
+
 static void startWiFi(unsigned long now)
 {
   if (wifiStarted) {
@@ -957,6 +962,15 @@ static void startWiFi(unsigned long now)
 
     DBGLN("Stopping Radio");
     Radio.End();
+
+#if defined(TARGET_RX) && defined(PLATFORM_ESP32)
+    // Free the secondary UART driver and any heap held by its IO object so
+    // WiFi (which needs a sizeable contiguous allocation on init) doesn't
+    // OOM/WDT a few seconds after softAP/STA start. The radio link is dead
+    // here, so the primary CRSF UART can also be released.
+    serial1Shutdown();
+    serialShutdown();
+#endif
   }
 
   DBGLN("Begin Webupdater");
