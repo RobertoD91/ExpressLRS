@@ -1391,7 +1391,7 @@ static void setupSerial()
 }
 
 #if defined(PLATFORM_ESP32)
-static void serial1Shutdown()
+void serial1Shutdown()
 {
     if(serial1IO != nullptr)
     {
@@ -1486,7 +1486,7 @@ void reconfigureSerial1()
     void reconfigureSerial1() {};
 #endif
 
-static void serialShutdown()
+void serialShutdown()
 {
     BackpackOrLogStrm = new NullStream();
     if(serialIO != nullptr)

@@ -268,6 +268,13 @@ void sendImmediateRC()
 
 void handleSerialIO()
 {
+    // Skip serial IO once we've left normal operation (wifiUpdate, bleJoystick, ...).
+    // The radio link is down in these modes, and the IO objects may have been
+    // released by the WiFi entry path to free heap.
+    if (connectionState > MODE_STATES)
+    {
+        return;
+    }
     // still get telemetry and send link stats if there's no model match
     if (*(serial0.io) != nullptr)
     {
