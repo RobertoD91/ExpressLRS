@@ -967,7 +967,9 @@ static void startWiFi(unsigned long now)
     // WiFi stack (which needs a sizeable contiguous allocation on init) doesn't
     // OOM/WDT a few seconds after softAP/STA start. The primary CRSF UART is
     // left running so DBGLN output survives WiFi mode.
+    DBGLN("DEBUG3618: heap before serial1Shutdown = %u (largest block %u)", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
     serial1Shutdown();
+    DBGLN("DEBUG3618: heap after serial1Shutdown = %u (largest block %u)", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
 #endif
   }
 
@@ -1161,6 +1163,9 @@ static void startServices()
 
   dnsServer.start(DNS_PORT, "*", ipAddress);
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+#if defined(PLATFORM_ESP32)
+  DBGLN("DEBUG3618: heap after dnsServer.start = %u (largest block %u)", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
+#endif
 
   startMDNS();
 
@@ -1222,8 +1227,14 @@ static void HandleWebUpdate()
         #elif defined(PLATFORM_ESP32)
         WiFi.setTxPower(WIFI_POWER_19_5dBm);
         #endif
+#if defined(PLATFORM_ESP32)
+        DBGLN("DEBUG3618: heap before softAP = %u (largest block %u)", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
+#endif
         WiFi.softAPConfig(ipAddress, ipAddress, netMsk);
         WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
+#if defined(PLATFORM_ESP32)
+        DBGLN("DEBUG3618: heap after softAP = %u (largest block %u)", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
+#endif
         startServices();
         break;
       case WIFI_STA:
@@ -1266,6 +1277,19 @@ static void HandleWebUpdate()
 
   if (servicesStarted)
   {
+#if defined(PLATFORM_ESP32)
+    // DEBUG3618: surface heap when it gets dangerously low (suspected OOM in the
+    // DNS/captive-portal path when a serial port is active on ESP32 RX in AP mode)
+    {
+      static uint32_t lastHeapLog = 0;
+      const uint32_t freeHeap = ESP.getFreeHeap();
+      if (freeHeap < 25000 && (now - lastHeapLog) > 500)
+      {
+        lastHeapLog = now;
+        DBGLN("DEBUG3618: low heap = %u (largest block %u)", freeHeap, ESP.getMaxAllocHeap());
+      }
+    }
+#endif
     dnsServer.processNextRequest();
     #if defined(PLATFORM_ESP8266)
       MDNS.update();
