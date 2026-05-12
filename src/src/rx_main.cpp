@@ -1486,7 +1486,7 @@ void reconfigureSerial1()
     void reconfigureSerial1() {};
 #endif
 
-void serialShutdown()
+static void serialShutdown()
 {
     BackpackOrLogStrm = new NullStream();
     if(serialIO != nullptr)

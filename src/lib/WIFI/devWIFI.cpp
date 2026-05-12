@@ -940,7 +940,6 @@ static bool initialize()
 
 #if defined(TARGET_RX) && defined(PLATFORM_ESP32)
 extern void serial1Shutdown();
-extern void serialShutdown();
 #endif
 
 static void startWiFi(unsigned long now)
@@ -964,12 +963,11 @@ static void startWiFi(unsigned long now)
     Radio.End();
 
 #if defined(TARGET_RX) && defined(PLATFORM_ESP32)
-    // Free the secondary UART driver and any heap held by its IO object so
-    // WiFi (which needs a sizeable contiguous allocation on init) doesn't
-    // OOM/WDT a few seconds after softAP/STA start. The radio link is dead
-    // here, so the primary CRSF UART can also be released.
+    // Free the secondary UART driver and the heap held by its IO object so the
+    // WiFi stack (which needs a sizeable contiguous allocation on init) doesn't
+    // OOM/WDT a few seconds after softAP/STA start. The primary CRSF UART is
+    // left running so DBGLN output survives WiFi mode.
     serial1Shutdown();
-    serialShutdown();
 #endif
   }
 
