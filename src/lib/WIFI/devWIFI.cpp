@@ -131,7 +131,15 @@ static bool captivePortal(AsyncWebServerRequest *request)
   if (!isIp(request->host()) && request->host() != (String(wifi_hostname) + ".local"))
   {
     DBGLN("Request redirected to captive portal");
-    request->redirect(String("http://") + toStringIp(request->client()->localIP()));
+    // DEBUG3618: was request->client()->localIP() - the captive-portal probe
+    // connection is frequently already being torn down by the time this runs
+    // (see "wifi:addba response cb: ap bss deleted" right before the reset), so
+    // dereferencing the client can be a use-after-free. In AP mode the redirect
+    // target is always the AP's own IP, which we already know.
+    String url = String("http://") + toStringIp(ipAddress);
+    DBGLN("DEBUG3618 cp: url=%s, calling redirect()", url.c_str());
+    request->redirect(url);
+    DBGLN("DEBUG3618 cp: redirect() returned");
     return true;
   }
   return false;
