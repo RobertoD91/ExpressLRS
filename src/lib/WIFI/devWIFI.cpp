@@ -946,10 +946,6 @@ static bool initialize()
   return true;
 }
 
-#if defined(TARGET_RX) && defined(PLATFORM_ESP32)
-extern void serial1Shutdown();
-#endif
-
 static void startWiFi(unsigned long now)
 {
   if (wifiStarted) {
@@ -969,16 +965,6 @@ static void startWiFi(unsigned long now)
 
     DBGLN("Stopping Radio");
     Radio.End();
-
-#if defined(TARGET_RX) && defined(PLATFORM_ESP32)
-    // Free the secondary UART driver and the heap held by its IO object so the
-    // WiFi stack (which needs a sizeable contiguous allocation on init) doesn't
-    // OOM/WDT a few seconds after softAP/STA start. The primary CRSF UART is
-    // left running so DBGLN output survives WiFi mode.
-    DBGLN("DEBUG3618: heap before serial1Shutdown = %u (largest block %u)", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
-    serial1Shutdown();
-    DBGLN("DEBUG3618: heap after serial1Shutdown = %u (largest block %u)", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
-#endif
   }
 
   DBGLN("Begin Webupdater");

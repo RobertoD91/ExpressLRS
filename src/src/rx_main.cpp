@@ -1391,7 +1391,7 @@ static void setupSerial()
 }
 
 #if defined(PLATFORM_ESP32)
-void serial1Shutdown()
+static void serial1Shutdown()
 {
     if(serial1IO != nullptr)
     {
